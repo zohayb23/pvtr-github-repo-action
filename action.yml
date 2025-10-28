@@ -1,0 +1,84 @@
+name: 'OSPS Security Assessment'
+description: 'Run Open Source Project Security Baseline assessments on your GitHub repository'
+author: 'Revanite'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  owner:
+    description: 'Repository owner (organization or user)'
+    required: true
+  repo:
+    description: 'Repository name'
+    required: true
+  token:
+    description: 'GitHub Personal Access Token with repo read permissions'
+    required: true
+  catalog:
+    description: 'OSPS catalog to assess against'
+    required: false
+    default: 'OSPS_B'
+  maturity-level:
+    description: 'Maturity level to assess'
+    required: false
+    default: 'Maturity Level 1'
+  log-level:
+    description: 'Log level (info, debug, trace)'
+    required: false
+    default: 'info'
+  output-format:
+    description: 'Output format (yaml or json)'
+    required: false
+    default: 'yaml'
+
+outputs:
+  results-path:
+    description: 'Path to the evaluation results directory'
+    value: 'evaluation_results'
+  
+runs:
+  using: 'composite'
+  steps:
+    - name: Create config file
+      shell: bash
+      run: |
+        cat > /tmp/pvtr-config.yml << EOF
+        loglevel: ${{ inputs.log-level }}
+        write-directory: evaluation_results
+        write: true
+        output: ${{ inputs.output-format }}
+        services:
+          assessment:
+            plugin: github-repo
+            policy:
+              catalogs:
+                - ${{ inputs.catalog }}
+              applicability:
+                - ${{ inputs.maturity-level }}
+            vars:
+              owner: ${{ inputs.owner }}
+              repo: ${{ inputs.repo }}
+              token: ${{ inputs.token }}
+        EOF
+    
+    - name: Run OSPS Assessment
+      shell: bash
+      run: |
+        docker run --rm \
+          -v /tmp/pvtr-config.yml:/.privateer/config.yml \
+          -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
+          ghcr.io/revanite-io/pvtr-github-repo:latest
+    
+    - name: Display results summary
+      shell: bash
+      run: |
+        echo "Assessment complete!"
+        echo "Results saved to: evaluation_results/"
+        if [ -d "evaluation_results" ]; then
+          echo ""
+          echo "Files generated:"
+          ls -lh evaluation_results/
+        fi
+
