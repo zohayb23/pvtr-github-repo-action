@@ -43,24 +43,32 @@ runs:
   steps:
     - name: Create config file
       shell: bash
+      env:
+        LOG_LEVEL: ${{ inputs.log-level }}
+        OUTPUT_FORMAT: ${{ inputs.output-format }}
+        CATALOG: ${{ inputs.catalog }}
+        MATURITY_LEVEL: ${{ inputs.maturity-level }}
+        OWNER: ${{ inputs.owner }}
+        REPO: ${{ inputs.repo }}
+        TOKEN: ${{ inputs.token }}
       run: |
         cat > /tmp/pvtr-config.yml << EOF
-        loglevel: ${{ inputs.log-level }}
+        loglevel: "$LOG_LEVEL"
         write-directory: evaluation_results
         write: true
-        output: ${{ inputs.output-format }}
+        output: "$OUTPUT_FORMAT"
         services:
           assessment:
             plugin: github-repo
             policy:
               catalogs:
-                - ${{ inputs.catalog }}
+                - "$CATALOG"
               applicability:
-                - ${{ inputs.maturity-level }}
+                - "$MATURITY_LEVEL"
             vars:
-              owner: ${{ inputs.owner }}
-              repo: ${{ inputs.repo }}
-              token: ${{ inputs.token }}
+              owner: "$OWNER"
+              repo: "$REPO"
+              token: "$TOKEN"
         EOF
 
     - name: Run OSPS Assessment
