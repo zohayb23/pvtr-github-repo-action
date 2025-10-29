@@ -37,7 +37,7 @@ outputs:
   results-path:
     description: 'Path to the evaluation results directory'
     value: 'evaluation_results'
-  
+
 runs:
   using: 'composite'
   steps:
@@ -62,15 +62,15 @@ runs:
               repo: ${{ inputs.repo }}
               token: ${{ inputs.token }}
         EOF
-    
+
     - name: Run OSPS Assessment
       shell: bash
       run: |
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
-          ghcr.io/revanite-io/pvtr-github-repo:latest
-    
+          eddieknight/pvtr-github-repo:latest
+
     - name: Display results summary
       shell: bash
       run: |
@@ -81,4 +81,3 @@ runs:
           echo "Files generated:"
           ls -lh evaluation_results/
         fi
-
