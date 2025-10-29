@@ -1,0 +1,145 @@
+name: 'OSPS Security Assessment'
+description: 'Run Open Source Project Security Baseline assessments on your GitHub repository'
+author: 'Revanite'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  owner:
+    description: 'Repository owner (organization or user)'
+    required: true
+  repo:
+    description: 'Repository name'
+    required: true
+  token:
+    description: 'GitHub Personal Access Token with repo read permissions'
+    required: true
+  catalog:
+    description: 'OSPS catalog to assess against'
+    required: false
+    default: 'OSPS_B'
+  maturity-level:
+    description: 'Maturity level to assess'
+    required: false
+    default: 'Maturity Level 1'
+  log-level:
+    description: 'Log level (info, debug, trace)'
+    required: false
+    default: 'info'
+  output-format:
+    description: 'Output format (yaml or json)'
+    required: false
+    default: 'yaml'
+  upload-sarif:
+    description: 'Upload results as SARIF to GitHub Security tab'
+    required: false
+    default: 'false'
+
+outputs:
+  results-path:
+    description: 'Path to the evaluation results directory'
+    value: 'evaluation_results'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Create config file
+      shell: bash
+      env:
+        LOG_LEVEL: ${{ inputs.log-level }}
+        OUTPUT_FORMAT: ${{ inputs.output-format }}
+        CATALOG: ${{ inputs.catalog }}
+        MATURITY_LEVEL: ${{ inputs.maturity-level }}
+        OWNER: ${{ inputs.owner }}
+        REPO: ${{ inputs.repo }}
+        TOKEN: ${{ inputs.token }}
+      run: |
+        cat > /tmp/pvtr-config.yml << EOF
+        loglevel: "$LOG_LEVEL"
+        write-directory: evaluation_results
+        write: true
+        output: "$OUTPUT_FORMAT"
+        services:
+          assessment:
+            plugin: github-repo
+            policy:
+              catalogs:
+                - "$CATALOG"
+              applicability:
+                - "$MATURITY_LEVEL"
+            vars:
+              owner: "$OWNER"
+              repo: "$REPO"
+              token: "$TOKEN"
+        EOF
+
+    - name: Run OSPS Assessment
+      shell: bash
+      run: |
+        docker run --rm \
+          -v /tmp/pvtr-config.yml:/.privateer/config.yml \
+          -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
+          eddieknight/pvtr-github-repo:latest
+
+    - name: Display results summary
+      shell: bash
+      run: |
+        echo "Assessment complete!"
+        echo "Results saved to: evaluation_results/"
+        if [ -d "evaluation_results" ]; then
+          echo ""
+          echo "Files generated:"
+          find evaluation_results -type f -exec ls -lh {} \;
+        fi
+
+    - name: Collect assessment artifacts
+      shell: bash
+      if: always()
+      run: |
+        echo "📦 Collecting assessment artifacts..."
+        if [ -d "evaluation_results" ]; then
+          # List all files in evaluation_results recursively
+          echo "Files found:"
+          find evaluation_results -type f -exec ls -lh {} \;
+          
+          # Count files
+          FILE_COUNT=$(find evaluation_results -type f | wc -l)
+          echo "Total files: $FILE_COUNT"
+          
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "⚠️ Warning: No files found in evaluation_results/"
+            echo "Artifacts may need to be uploaded by the calling workflow."
+          fi
+        else
+          echo "⚠️ Warning: evaluation_results directory does not exist"
+        fi
+
+    - name: Prepare SARIF file for upload
+      shell: bash
+      id: sarif
+      if: inputs.upload-sarif == 'true'
+      continue-on-error: true
+      run: |
+        echo "🔍 Checking for SARIF generation capability..."
+        # Find SARIF file if it exists
+        SARIF_FILE=$(find evaluation_results -name "*.sarif" -type f 2>/dev/null | head -1)
+        
+        if [ -n "$SARIF_FILE" ] && [ -f "$SARIF_FILE" ]; then
+          echo "✅ SARIF file found: $SARIF_FILE"
+          echo "sarif_file=$SARIF_FILE" >> $GITHUB_OUTPUT
+        else
+          echo "ℹ️ SARIF file not found. The tool may need to be configured to output SARIF format."
+          echo "Note: SARIF generation requires tool support via ToSARIF() method from gemara library."
+          echo "See: https://github.com/ossf/gemara/blob/main/layer4/evaluation_log.go"
+          echo "sarif_file=" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Upload SARIF to GitHub Security tab
+      if: inputs.upload-sarif == 'true' && steps.sarif.outputs.sarif_file != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.sarif.outputs.sarif_file }}
+        wait-for-processing: true
+      continue-on-error: true
