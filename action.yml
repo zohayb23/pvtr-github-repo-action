@@ -66,7 +66,7 @@ runs:
 
         cat > /tmp/pvtr-config.yml << EOF
         loglevel: "$LOG_LEVEL"
-        write-directory: evaluation_results
+        write-directory: /evaluation_results
         write: true
         output: "$FINAL_OUTPUT_FORMAT"
         services:
@@ -86,10 +86,20 @@ runs:
     - name: Run OSPS Assessment
       shell: bash
       run: |
+        echo "🔍 Debug: Config file contents:"
+        cat /tmp/pvtr-config.yml
+
+        echo ""
+        echo "🚀 Running assessment..."
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
           eddieknight/pvtr-github-repo:latest
+
+        echo ""
+        echo "🔍 Debug: Checking files after Docker run..."
+        ls -la evaluation_results/ 2>/dev/null || echo "Directory doesn't exist yet"
+        find evaluation_results -type f 2>/dev/null || echo "No files found"
 
     - name: Display results summary
       shell: bash
