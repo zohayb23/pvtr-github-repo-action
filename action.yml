@@ -70,7 +70,7 @@ runs:
         write: true
         output: "$FINAL_OUTPUT_FORMAT"
         services:
-          assessment:
+          pvtr:
             plugin: github-repo
             policy:
               catalogs:
@@ -86,39 +86,11 @@ runs:
     - name: Run OSPS Assessment
       shell: bash
       run: |
-        echo "🔍 Debug: Config file contents:"
-        cat /tmp/pvtr-config.yml
-
-        echo ""
         echo "🚀 Running assessment..."
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
           eddieknight/pvtr-github-repo:latest
-
-        echo ""
-        echo "🔍 Debug: Checking INSIDE container for files..."
-        docker run --rm \
-          -v /tmp/pvtr-config.yml:/.privateer/config.yml \
-          -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
-          eddieknight/pvtr-github-repo:latest \
-          sh -c "echo 'Checking /evaluation_results:'; ls -la /evaluation_results/ 2>/dev/null || echo 'Not found'; find /evaluation_results -type f 2>/dev/null || echo 'No files'; echo 'Checking current dir:'; pwd; find . -name '*.sarif' -o -name '*.yaml' 2>/dev/null | head -10"
-
-        echo ""
-        echo "🔍 Debug: Checking files after Docker run..."
-        echo "Checking mounted directory:"
-        ls -la evaluation_results/ 2>/dev/null || echo "Directory doesn't exist yet"
-        find evaluation_results -type f 2>/dev/null || echo "No files found"
-        echo ""
-        echo "Checking for subdirectories:"
-        find evaluation_results -type d 2>/dev/null || echo "No subdirectories"
-        echo ""
-        echo "📄 Checking log file for errors:"
-        if [ -f "evaluation_results/assessment/assessment.log" ]; then
-          cat evaluation_results/assessment/assessment.log | head -50
-        else
-          find evaluation_results -name "*.log" -exec echo "Found: {}" \; -exec head -30 {} \;
-        fi
 
     - name: Display results summary
       shell: bash
