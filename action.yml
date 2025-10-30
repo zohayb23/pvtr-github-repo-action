@@ -86,11 +86,42 @@ runs:
     - name: Run OSPS Assessment
       shell: bash
       run: |
+        echo "📝 Config in use:" && cat /tmp/pvtr-config.yml || true
+        echo ""
+        echo "ℹ️ Privateer/tool version (inside container):"
+        docker run --rm \
+          -v /tmp/pvtr-config.yml:/.privateer/config.yml \
+          -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
+          eddieknight/pvtr-github-repo:latest \
+          sh -c 'pwd; id; ./privateer --version || true'
+
+        echo ""
+        echo "🔍 Before run: listing container results dir"
+        docker run --rm \
+          -v /tmp/pvtr-config.yml:/.privateer/config.yml \
+          -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
+          eddieknight/pvtr-github-repo:latest \
+          sh -c 'ls -la /.privateer/bin/evaluation_results || true; find /.privateer/bin/evaluation_results -maxdepth 2 -type f -print || true'
+
+        echo ""
         echo "🚀 Running assessment..."
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
-          eddieknight/pvtr-github-repo@sha256:185d27f914396ed207b5549020f8ced0ff9e7beffc7e56cc7bfc0ef0962cd4e4
+          eddieknight/pvtr-github-repo:latest
+
+        echo ""
+        echo "🔍 After run: listing container results dir"
+        docker run --rm \
+          -v /tmp/pvtr-config.yml:/.privateer/config.yml \
+          -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
+          eddieknight/pvtr-github-repo:latest \
+          sh -c 'ls -la /.privateer/bin/evaluation_results || true; find /.privateer/bin/evaluation_results -maxdepth 2 -type f -name "*.sarif" -o -name "*.log" -print || true'
+
+        echo ""
+        echo "📁 Host results:"
+        ls -la evaluation_results || true
+        find evaluation_results -maxdepth 2 -type f -print || true
 
     - name: Display results summary
       shell: bash
