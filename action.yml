@@ -71,7 +71,7 @@ runs:
         output: "$FINAL_OUTPUT_FORMAT"
         services:
           assessment:
-            plugin: github-repo
+            plugin: pvtr-github-repo
             policy:
               catalogs:
                 - "$CATALOG"
