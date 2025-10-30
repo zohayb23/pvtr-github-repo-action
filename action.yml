@@ -94,14 +94,14 @@ runs:
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
-          eddieknight/pvtr-github-repo:latest
+          ghcr.io/revanite-io/pvtr-github-repo:latest
 
         echo ""
         echo "🔍 Debug: Checking INSIDE container for files..."
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
-          eddieknight/pvtr-github-repo:latest \
+          ghcr.io/revanite-io/pvtr-github-repo:latest \
           sh -c "echo 'Checking /evaluation_results:'; ls -la /evaluation_results/ 2>/dev/null || echo 'Not found'; find /evaluation_results -type f 2>/dev/null || echo 'No files'; echo 'Checking current dir:'; pwd; find . -name '*.sarif' -o -name '*.yaml' 2>/dev/null | head -10"
 
         echo ""
