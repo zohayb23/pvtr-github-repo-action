@@ -179,37 +179,10 @@ runs:
           echo "sarif_file=" >> $GITHUB_OUTPUT
         fi
 
-    - name: Fallback – build latest image from source and re-run
-      if: inputs.upload-sarif == 'true' && steps.sarif.outputs.sarif_file == ''
-      shell: bash
-      run: |
-        echo "🛠️ Building fallback image from source (revanite-io/pvtr-github-repo@main)..."
-        docker build --pull --no-cache https://github.com/revanite-io/pvtr-github-repo.git#main -t local/pvtr-github-repo:latest
-        echo "🚀 Re-running assessment with fallback image..."
-        docker run --rm \
-          -v /tmp/pvtr-config.yml:/.privateer/config.yml \
-          -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
-          local/pvtr-github-repo:latest
-
-    - name: Retry SARIF discovery after fallback
-      if: inputs.upload-sarif == 'true' && steps.sarif.outputs.sarif_file == ''
-      id: sarif_retry
-      shell: bash
-      continue-on-error: true
-      run: |
-        SARIF_FILE=$(find evaluation_results -name "*.sarif" -type f 2>/dev/null | head -1)
-        if [ -n "$SARIF_FILE" ] && [ -f "$SARIF_FILE" ]; then
-          echo "✅ SARIF file found after fallback: $SARIF_FILE"
-          echo "sarif_file=$SARIF_FILE" >> $GITHUB_OUTPUT
-        else
-          echo "❌ Still no SARIF after fallback build."
-          echo "sarif_file=" >> $GITHUB_OUTPUT
-        fi
-
     - name: Upload SARIF to GitHub Security tab
-      if: inputs.upload-sarif == 'true' && (steps.sarif.outputs.sarif_file != '' || steps.sarif_retry.outputs.sarif_file != '')
+      if: inputs.upload-sarif == 'true' && steps.sarif.outputs.sarif_file != ''
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: ${{ steps.sarif.outputs.sarif_file || steps.sarif_retry.outputs.sarif_file }}
+        sarif_file: ${{ steps.sarif.outputs.sarif_file }}
         wait-for-processing: true
       continue-on-error: true
