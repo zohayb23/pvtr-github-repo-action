@@ -90,7 +90,7 @@ runs:
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
-          eddieknight/pvtr-github-repo:latest
+          eddieknight/pvtr-github-repo@sha256:185d27f914396ed207b5549020f8ced0ff9e7beffc7e56cc7bfc0ef0962cd4e4
 
     - name: Display results summary
       shell: bash
