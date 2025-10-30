@@ -83,6 +83,12 @@ runs:
               token: "$TOKEN"
         EOF
 
+    - name: Prepare writable results directory
+      shell: bash
+      run: |
+        mkdir -p evaluation_results
+        chmod 777 evaluation_results
+
     - name: Run OSPS Assessment
       shell: bash
       run: |
