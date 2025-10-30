@@ -90,6 +90,12 @@ runs:
         cat /tmp/pvtr-config.yml
 
         echo ""
+        echo "🔐 Logging into GHCR..."
+        if [ -n "${{ inputs.token }}" ]; then
+          echo "${{ inputs.token }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin || echo "GHCR login failed (continuing if image is public)"
+        fi
+
+        echo ""
         echo "🚀 Running assessment..."
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
