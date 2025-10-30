@@ -90,24 +90,18 @@ runs:
         cat /tmp/pvtr-config.yml
 
         echo ""
-        echo "🔐 Logging into GHCR..."
-        if [ -n "${{ inputs.token }}" ]; then
-          echo "${{ inputs.token }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin || echo "GHCR login failed (continuing if image is public)"
-        fi
-
-        echo ""
         echo "🚀 Running assessment..."
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
-          ghcr.io/revanite-io/pvtr-github-repo:latest
+          eddieknight/pvtr-github-repo:latest
 
         echo ""
         echo "🔍 Debug: Checking INSIDE container for files..."
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
           -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
-          ghcr.io/revanite-io/pvtr-github-repo:latest \
+          eddieknight/pvtr-github-repo:latest \
           sh -c "echo 'Checking /evaluation_results:'; ls -la /evaluation_results/ 2>/dev/null || echo 'Not found'; find /evaluation_results -type f 2>/dev/null || echo 'No files'; echo 'Checking current dir:'; pwd; find . -name '*.sarif' -o -name '*.yaml' 2>/dev/null | head -10"
 
         echo ""
