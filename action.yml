@@ -19,7 +19,7 @@ inputs:
   catalog:
     description: 'OSPS catalog to assess against'
     required: false
-    default: 'OSPS_B'
+    default: 'osps-baseline'
   maturity-level:
     description: 'Maturity level to assess'
     required: false
@@ -29,11 +29,11 @@ inputs:
     required: false
     default: 'info'
   output-format:
-    description: 'Output format (yaml or json)'
+    description: 'Output format (yaml, json, or sarif)'
     required: false
     default: 'yaml'
   upload-sarif:
-    description: 'Upload results as SARIF to GitHub Security tab'
+    description: 'Upload results as SARIF to GitHub Security tab. When true, output-format is automatically set to sarif'
     required: false
     default: 'false'
 
@@ -55,14 +55,22 @@ runs:
         OWNER: ${{ inputs.owner }}
         REPO: ${{ inputs.repo }}
         TOKEN: ${{ inputs.token }}
+        UPLOAD_SARIF: ${{ inputs.upload-sarif }}
       run: |
+        # If upload-sarif is enabled, use sarif output format
+        if [ "$UPLOAD_SARIF" = "true" ]; then
+          FINAL_OUTPUT_FORMAT="sarif"
+        else
+          FINAL_OUTPUT_FORMAT="$OUTPUT_FORMAT"
+        fi
+
         cat > /tmp/pvtr-config.yml << EOF
         loglevel: "$LOG_LEVEL"
         write-directory: evaluation_results
         write: true
-        output: "$OUTPUT_FORMAT"
+        output: "$FINAL_OUTPUT_FORMAT"
         services:
-          assessment:
+          pvtr:
             plugin: github-repo
             policy:
               catalogs:
@@ -75,46 +83,19 @@ runs:
               token: "$TOKEN"
         EOF
 
+    - name: Prepare writable results directory
+      shell: bash
+      run: |
+        mkdir -p evaluation_results
+        chmod 777 evaluation_results
+ 
     - name: Run OSPS Assessment
       shell: bash
       run: |
         docker run --rm \
           -v /tmp/pvtr-config.yml:/.privateer/config.yml \
-          -v ${{ github.workspace }}/evaluation_results:/evaluation_results \
+          -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
           eddieknight/pvtr-github-repo:latest
-
-    - name: Display results summary
-      shell: bash
-      run: |
-        echo "Assessment complete!"
-        echo "Results saved to: evaluation_results/"
-        if [ -d "evaluation_results" ]; then
-          echo ""
-          echo "Files generated:"
-          find evaluation_results -type f -exec ls -lh {} \;
-        fi
-
-    - name: Collect assessment artifacts
-      shell: bash
-      if: always()
-      run: |
-        echo "📦 Collecting assessment artifacts..."
-        if [ -d "evaluation_results" ]; then
-          # List all files in evaluation_results recursively
-          echo "Files found:"
-          find evaluation_results -type f -exec ls -lh {} \;
-          
-          # Count files
-          FILE_COUNT=$(find evaluation_results -type f | wc -l)
-          echo "Total files: $FILE_COUNT"
-          
-          if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "⚠️ Warning: No files found in evaluation_results/"
-            echo "Artifacts may need to be uploaded by the calling workflow."
-          fi
-        else
-          echo "⚠️ Warning: evaluation_results directory does not exist"
-        fi
 
     - name: Prepare SARIF file for upload
       shell: bash
@@ -122,17 +103,10 @@ runs:
       if: inputs.upload-sarif == 'true'
       continue-on-error: true
       run: |
-        echo "🔍 Checking for SARIF generation capability..."
-        # Find SARIF file if it exists
         SARIF_FILE=$(find evaluation_results -name "*.sarif" -type f 2>/dev/null | head -1)
-        
         if [ -n "$SARIF_FILE" ] && [ -f "$SARIF_FILE" ]; then
-          echo "✅ SARIF file found: $SARIF_FILE"
           echo "sarif_file=$SARIF_FILE" >> $GITHUB_OUTPUT
         else
-          echo "ℹ️ SARIF file not found. The tool may need to be configured to output SARIF format."
-          echo "Note: SARIF generation requires tool support via ToSARIF() method from gemara library."
-          echo "See: https://github.com/ossf/gemara/blob/main/layer4/evaluation_log.go"
           echo "sarif_file=" >> $GITHUB_OUTPUT
         fi
 
