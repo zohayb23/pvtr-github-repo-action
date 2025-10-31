@@ -160,7 +160,13 @@ runs:
             existing_rule_ids = set()
 
             # Ensure all existing results have physicalLocation (GitHub Code Scanning requirement)
+            # Also filter out passed items (level="note") - only show actionable issues
+            filtered_results = []
             for result in all_results:
+                # Skip passed items (note level)
+                if result.get("level") == "note":
+                    continue
+
                 if "ruleId" in result:
                     existing_rule_ids.add(result["ruleId"])
                 # Add physicalLocation if missing (required by GitHub Code Scanning)
@@ -181,6 +187,9 @@ runs:
                                     "uri": "README.md"
                                 }
                             }
+                filtered_results.append(result)
+
+            all_results = filtered_results
 
             # Read YAML to find all assessment results
             if yaml_file and os.path.exists(yaml_file):
@@ -208,6 +217,10 @@ runs:
                                             # Only add result if not already present
                                             if rule_id not in existing_rule_ids:
                                                 level = map_result_to_sarif_level(result)
+
+                                                # Skip passed items - Code Scanning should only show actionable issues
+                                                if level == "note":
+                                                    continue
 
                                                 # Create SARIF result entry
                                                 # GitHub Code Scanning requires physicalLocation with a valid file URI
