@@ -159,10 +159,28 @@ runs:
             all_results = run["results"]
             existing_rule_ids = set()
 
-            # Collect existing rule IDs from SARIF
+            # Ensure all existing results have physicalLocation (GitHub Code Scanning requirement)
             for result in all_results:
                 if "ruleId" in result:
                     existing_rule_ids.add(result["ruleId"])
+                # Add physicalLocation if missing (required by GitHub Code Scanning)
+                # Using README.md as placeholder for repository-level security assessments
+                if "locations" not in result or len(result["locations"]) == 0:
+                    result["locations"] = [{
+                        "physicalLocation": {
+                            "artifactLocation": {
+                                "uri": "README.md"
+                            }
+                        }
+                    }]
+                else:
+                    for location in result["locations"]:
+                        if "physicalLocation" not in location:
+                            location["physicalLocation"] = {
+                                "artifactLocation": {
+                                    "uri": "README.md"
+                                }
+                            }
 
             # Read YAML to find all assessment results
             if yaml_file and os.path.exists(yaml_file):
@@ -192,6 +210,8 @@ runs:
                                                 level = map_result_to_sarif_level(result)
 
                                                 # Create SARIF result entry
+                                                # GitHub Code Scanning requires physicalLocation with a valid file URI
+                                                # Using README.md as placeholder for repository-level security assessments
                                                 sarif_result = {
                                                     "ruleId": rule_id,
                                                     "level": level,
@@ -199,6 +219,11 @@ runs:
                                                         "text": message if message else f"{req_id}: {result}"
                                                     },
                                                     "locations": [{
+                                                        "physicalLocation": {
+                                                            "artifactLocation": {
+                                                                "uri": "README.md"
+                                                            }
+                                                        },
                                                         "logicalLocations": [{
                                                             "fullyQualifiedName": rule_id
                                                         }]
