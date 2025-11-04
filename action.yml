@@ -87,37 +87,6 @@ runs:
           -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
           eddieknight/pvtr-github-repo:latest
 
-    - name: Enrich SARIF with all assessment results
-      shell: bash
-      if: inputs.upload-sarif == 'true'
-      continue-on-error: true
-      run: |
-        SARIF_FILE=$(find evaluation_results -name "*.sarif" -type f 2>/dev/null | head -1)
-        YAML_FILE=$(find evaluation_results -name "*.yaml" -type f 2>/dev/null | head -1)
-
-        if [ -z "$SARIF_FILE" ] || [ ! -f "$SARIF_FILE" ]; then
-          echo "⚠️  No SARIF file found"
-          exit 0
-        fi
-
-        # Find the enrichment script in the action directory
-        SCRIPT_PATH="${{ github.action_path }}/enrich_sarif.py"
-        if [ ! -f "$SCRIPT_PATH" ]; then
-          echo "⚠️  enrich_sarif.py not found at $SCRIPT_PATH"
-          exit 1
-        fi
-
-        # Install PyYAML if needed and run the enrichment script
-        if command -v python3 >/dev/null 2>&1; then
-          python3 -m pip install --quiet PyYAML 2>/dev/null || true
-          python3 "$SCRIPT_PATH" "$SARIF_FILE" "$YAML_FILE" || echo "⚠️  Failed to enrich SARIF file"
-        elif command -v python >/dev/null 2>&1; then
-          python -m pip install --quiet PyYAML 2>/dev/null || true
-          python "$SCRIPT_PATH" "$SARIF_FILE" "$YAML_FILE" || echo "⚠️  Failed to enrich SARIF file"
-        else
-          echo "⚠️  Python not found, skipping SARIF enrichment"
-        fi
-
     - name: Prepare SARIF file for upload
       shell: bash
       id: sarif
