@@ -20,14 +20,6 @@ inputs:
     description: 'OSPS catalog to assess against'
     required: false
     default: 'osps-baseline'
-  maturity-level:
-    description: 'Maturity level to assess'
-    required: false
-    default: 'Maturity Level 1'
-  log-level:
-    description: 'Log level (info, debug, trace)'
-    required: false
-    default: 'info'
   output-format:
     description: 'Output format (yaml, json, or sarif)'
     required: false
@@ -48,10 +40,8 @@ runs:
     - name: Create config file
       shell: bash
       env:
-        LOG_LEVEL: ${{ inputs.log-level }}
         OUTPUT_FORMAT: ${{ inputs.output-format }}
         CATALOG: ${{ inputs.catalog }}
-        MATURITY_LEVEL: ${{ inputs.maturity-level }}
         OWNER: ${{ inputs.owner }}
         REPO: ${{ inputs.repo }}
         TOKEN: ${{ inputs.token }}
@@ -65,7 +55,7 @@ runs:
         fi
 
         cat > /tmp/pvtr-config.yml << EOF
-        loglevel: "$LOG_LEVEL"
+        loglevel: "info"
         write-directory: evaluation_results
         write: true
         output: "$FINAL_OUTPUT_FORMAT"
@@ -76,7 +66,7 @@ runs:
               catalogs:
                 - "$CATALOG"
               applicability:
-                - "$MATURITY_LEVEL"
+                - "Maturity Level 1"
             vars:
               owner: "$OWNER"
               repo: "$REPO"
@@ -88,7 +78,7 @@ runs:
       run: |
         mkdir -p evaluation_results
         chmod 777 evaluation_results
- 
+
     - name: Run OSPS Assessment
       shell: bash
       run: |
@@ -105,13 +95,26 @@ runs:
       run: |
         SARIF_FILE=$(find evaluation_results -name "*.sarif" -type f 2>/dev/null | head -1)
         if [ -n "$SARIF_FILE" ] && [ -f "$SARIF_FILE" ]; then
-          echo "sarif_file=$SARIF_FILE" >> $GITHUB_OUTPUT
+          # Validate that the SARIF file contains at least one result
+          # GitHub Code Scanning requires at least one result in runs[].results array
+          RESULT_COUNT=$(jq '[.runs[]?.results[]?] | length' "$SARIF_FILE" 2>/dev/null || echo "0")
+          if [ "$RESULT_COUNT" -gt 0 ]; then
+            echo "✅ SARIF file contains $RESULT_COUNT result(s)"
+            echo "sarif_file=$SARIF_FILE" >> $GITHUB_OUTPUT
+            echo "has_results=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  SARIF file exists but contains no results. GitHub Code Scanning requires at least one result."
+            echo "sarif_file=" >> $GITHUB_OUTPUT
+            echo "has_results=false" >> $GITHUB_OUTPUT
+          fi
         else
+          echo "⚠️  No SARIF file found in evaluation_results directory"
           echo "sarif_file=" >> $GITHUB_OUTPUT
+          echo "has_results=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Upload SARIF to GitHub Security tab
-      if: inputs.upload-sarif == 'true' && steps.sarif.outputs.sarif_file != ''
+      if: inputs.upload-sarif == 'true' && steps.sarif.outputs.sarif_file != '' && steps.sarif.outputs.has_results == 'true'
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ steps.sarif.outputs.sarif_file }}
