@@ -4,11 +4,9 @@ GitHub Action for running OSPS (Open Source Project Security) Baseline assessmen
 
 ## Features
 
-- 🔒 Automated security assessments against OSPS Baseline controls
-- 📊 Multiple output formats: YAML, JSON, or SARIF
-- 🔍 Direct integration with GitHub Security tab via SARIF upload
-- 🎯 Configurable catalog selection (default: `osps-baseline`)
-- 📦 Artifact uploads for assessment results
+- Automated security assessments against OSPS Baseline controls
+- Multiple output formats: YAML, JSON, or SARIF
+- Direct integration with GitHub Security tab via SARIF upload
 
 ## Results
 
@@ -63,15 +61,8 @@ jobs:
 | `owner` | Repository owner (organization or user) | Yes | - |
 | `repo` | Repository name | Yes | - |
 | `token` | GitHub Personal Access Token with repo read permissions | Yes | - |
-| `catalog` | OSPS catalog to assess against | No | `osps-baseline` |
 | `output-format` | Output format (`yaml`, `json`, or `sarif`) | No | `yaml` |
 | `upload-sarif` | Upload results as SARIF to GitHub Security tab. When `true`, `output-format` is automatically set to `sarif` | No | `false` |
-
-### Outputs
-
-| Output | Description |
-|--------|-------------|
-| `results-path` | Path to the evaluation results directory (`evaluation_results`) |
 
 ## Requirements
 
@@ -84,19 +75,7 @@ You need a GitHub Personal Access Token (PAT) with the following permissions:
 1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
 2. Generate a new token with `repo` scope (or `public_repo` for public repositories)
 3. Add the token as a secret in your repository (Settings → Secrets and variables → Actions)
-4. Reference it in your workflow as `${{ secrets.YOUR_TOKEN_NAME }}`
-
-**Note:** For public repositories, you can use `${{ secrets.GITHUB_TOKEN }}` which is automatically provided by GitHub Actions, but it has limited permissions. For private repositories or more comprehensive assessments, use a PAT.
-
-### Permissions
-
-When using `upload-sarif: true`, your workflow must include the `security-events: write` permission:
-
-```yaml
-permissions:
-  contents: read
-  security-events: write  # Required for SARIF upload
-```
+4. Reference it by name in your workflow, such as `${{ secrets.PVTR_GITHUB_TOKEN }}`
 
 ## Output Formats
 
@@ -109,18 +88,11 @@ Machine-readable format, useful for programmatic processing and integration with
 ### SARIF
 Static Analysis Results Interchange Format, designed for upload to GitHub's Security tab. Automatically selected when `upload-sarif: true`.
 
-## Results Location
-
-All assessment results are written to the `evaluation_results/` directory in your workspace. This directory contains:
-- Assessment results in the selected format
-- Detailed evaluation logs
-- Control evaluation outcomes
-
 ## FAQ
 
 ### Q: What permissions does my GitHub token need?
 
-**A:** Your GitHub Personal Access Token needs **repository read permissions**. For public repositories, you can use the `repo` scope, or `public_repo` for public repos only.
+**A:** Your GitHub Personal Access Token needs **repository read permissions**. For public repositories, you can use the `repo` scope, or `public_repo` for public repos only. An additional check for multi-factor authentication will run if your token includes `admin:org` permissions.
 
 ### Q: Can I use `GITHUB_TOKEN` instead of a Personal Access Token?
 
@@ -130,16 +102,10 @@ All assessment results are written to the `evaluation_results/` directory in you
 
 **A:** There are several common reasons:
 
-1. **Missing permissions**: Ensure your workflow includes `security-events: write` permission
-2. **Empty SARIF file**: GitHub Code Scanning requires at least one result in the SARIF file. If all controls pass, the file may be empty and won't upload
-3. **Invalid SARIF format**: The action validates the SARIF file before upload. Check the workflow logs for validation messages
-4. **Workflow permissions**: Organization-level settings may restrict security event uploads. Check your organization's security settings
-
-The action will log warnings if the SARIF file cannot be uploaded, and the upload step uses `continue-on-error: true` to prevent workflow failures.
-
-### Q: I chose to upload the SARIF file, but I don't see any results on the security tab. Why?
-
-**A:** Double check that the run completed successfully — because of the reliance on API calls to collect data, it occasionally encounters an error and needs to be re-run. Alternatively, you may not have the correct permissions on the repository to view the security alerts — or there may be an issue with your API token.
+1. **Missing permissions**: Ensure your workflow includes `security-events: write` permission. Organization-level settings may also restrict security event uploads.
+3. **Invalid SARIF format**: The action validates the SARIF file before upload. Check the workflow logs for any errors produced by the plugin
+5. **Plugin crash:** Because of the reliance on API calls to collect data, the plugin occasionally encounters an error and needs to be re-run
+6. **User Permissions: If you are not authorized to view the security tab, it may have uploaded without your knowlege.
 
 ### Q: What if I get permission errors when accessing files?
 
