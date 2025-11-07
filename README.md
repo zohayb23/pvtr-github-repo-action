@@ -66,8 +66,6 @@ jobs:
 
 ## Requirements
 
-### GitHub Token Setup
-
 You need a GitHub Personal Access Token (PAT) with the following permissions:
 - **Repository read access** - Required to read repository metadata, files, and settings
 
@@ -79,14 +77,9 @@ You need a GitHub Personal Access Token (PAT) with the following permissions:
 
 ## Output Formats
 
-### YAML (Default)
-Human-readable format, suitable for local review and CI/CD pipelines.
-
-### JSON
-Machine-readable format, useful for programmatic processing and integration with other tools.
-
-### SARIF
-Static Analysis Results Interchange Format, designed for upload to GitHub's Security tab. Automatically selected when `upload-sarif: true`.
+- **YAML (Default)**: Human-readable format, suitable for local review and CI/CD pipelines
+- **JSON**: Machine-readable format, useful for programmatic processing and integration with other tools
+- **SARIF**: Static Analysis Results Interchange Format, connects results to GitHub's Security tab
 
 ## FAQ
 
