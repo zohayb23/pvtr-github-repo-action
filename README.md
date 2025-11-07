@@ -120,10 +120,7 @@ All assessment results are written to the `evaluation_results/` directory in you
 
 ### Q: What permissions does my GitHub token need?
 
-**A:** Your GitHub Personal Access Token needs **repository read permissions**. For public repositories, you can use the `repo` scope (or `public_repo` for public repos only). For private repositories, you'll need the full `repo` scope. The token is used to:
-- Read repository metadata
-- Access repository files and settings
-- Query GitHub's API for security-related information
+**A:** Your GitHub Personal Access Token needs **repository read permissions**. For public repositories, you can use the `repo` scope, or `public_repo` for public repos only.
 
 ### Q: Can I use `GITHUB_TOKEN` instead of a Personal Access Token?
 
@@ -140,40 +137,9 @@ All assessment results are written to the `evaluation_results/` directory in you
 
 The action will log warnings if the SARIF file cannot be uploaded, and the upload step uses `continue-on-error: true` to prevent workflow failures.
 
-### Q: What happens if the assessment finds no issues?
+### Q: I chose to upload the SARIF file, but I don't see any results on the security tab. Why?
 
-**A:** If all controls pass, the SARIF file may contain no results. GitHub Code Scanning requires at least one result in the SARIF file to upload successfully. In this case:
-- The action will detect the empty SARIF file
-- A warning will be logged
-- The SARIF upload step will be skipped
-- Other output formats (YAML/JSON) will still contain the full assessment results
-
-### Q: How do I choose which catalog to assess against?
-
-**A:** Use the `catalog` input parameter. The default is `osps-baseline`, which assesses against the Open Source Project Security Baseline. You can specify other catalogs if available. Check the [OSPS Baseline documentation](https://baseline.openssf.org) for available catalogs.
-
-### Q: Can I assess multiple repositories with one workflow?
-
-**A:** Yes, you can create a matrix strategy to assess multiple repositories:
-
-```yaml
-jobs:
-  assess-repos:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        repo: [repo1, repo2, repo3]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Run OSPS Security Assessment
-        uses: revanite-io/pvtr-github-repo-action@main
-        with:
-          owner: ${{ github.repository_owner }}
-          repo: ${{ matrix.repo }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-```
+**A:** Double check that the run completed successfully — because of the reliance on API calls to collect data, it occasionally encounters an error and needs to be re-run. Alternatively, you may not have the correct permissions on the repository to view the security alerts — or there may be an issue with your API token.
 
 ### Q: What if I get permission errors when accessing files?
 
@@ -182,28 +148,9 @@ jobs:
 - Check that the `evaluation_results` directory is created and writable
 - Review the workflow logs for specific permission error messages
 
-### Q: How long do assessment results take to process?
-
-**A:** Assessment time varies based on:
-- Repository size and complexity
-- Number of controls being evaluated
-- GitHub API rate limits
-
-Typically, assessments complete in 1-5 minutes. The action includes `wait-for-processing: true` for SARIF uploads, which waits for GitHub to process the results before completing.
-
 ### Q: Can I customize the maturity level being assessed?
 
-**A:** Currently, the action assesses against "Maturity Level 1" by default. This is hardcoded in the action configuration. For different maturity levels, you would need to modify the action or use the underlying Docker image directly with a custom configuration file.
-
-### Q: Where can I find example workflows?
-
-**A:** Check out these examples:
-- [OSPS Security Assessment Workflow](https://github.com/privateerproj/.github/blob/main/.github/workflows/osps-baseline.yml)
-- [Example Configuration](https://github.com/privateerproj/.github/blob/main/.github/pvtr-config.yml)
-
-### Q: What Docker image does this action use?
-
-**A:** The action uses the `eddieknight/pvtr-github-repo:latest` Docker image, which contains the Privateer plugin for GitHub repository assessments.
+**A:** Currently, the action assesses against "Maturity Level 1" by default. This is hardcoded in the action because higher maturity levels do not currently produce high-confidence results from the `pvtr-github-repo` plugin. You can use the plugin directly to access any assessments that are available.
 
 ### Q: How do I troubleshoot a failed assessment?
 
@@ -226,14 +173,6 @@ on:
 ```
 
 This allows you to run regular security assessments automatically.
-
-### Q: What's the difference between `output-format` and `upload-sarif`?
-
-**A:** 
-- `output-format` controls the format of files written to `evaluation_results/` (yaml, json, or sarif)
-- `upload-sarif` is a boolean that, when `true`, automatically sets the output format to `sarif` AND uploads the SARIF file to GitHub's Security tab
-
-If you set `upload-sarif: true`, you don't need to also set `output-format: sarif` - it's handled automatically.
 
 ## Contributing
 
