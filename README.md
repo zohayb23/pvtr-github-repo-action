@@ -66,8 +66,7 @@ jobs:
 
 ## Requirements
 
-You need a GitHub Personal Access Token (PAT) with the following permissions:
-- **Repository read access** - Required to read repository metadata, files, and settings
+Your GitHub Personal Access Token needs **repository read permissions**. For public repositories, you can use the `repo` scope, or `public_repo` for public repos only. An additional check for multi-factor authentication will run if your token includes `admin:org` permissions.
 
 **Creating a PAT:**
 1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
@@ -82,10 +81,6 @@ You need a GitHub Personal Access Token (PAT) with the following permissions:
 - **SARIF**: Static Analysis Results Interchange Format, connects results to GitHub's Security tab
 
 ## FAQ
-
-### Q: What permissions does my GitHub token need?
-
-**A:** Your GitHub Personal Access Token needs **repository read permissions**. For public repositories, you can use the `repo` scope, or `public_repo` for public repos only. An additional check for multi-factor authentication will run if your token includes `admin:org` permissions.
 
 ### Q: Can I use `GITHUB_TOKEN` instead of a Personal Access Token?
 
