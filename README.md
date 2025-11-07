@@ -84,7 +84,7 @@ Your GitHub Personal Access Token needs **repository read permissions**. For pub
 
 ### Q: Can I use `GITHUB_TOKEN` instead of a Personal Access Token?
 
-**A:** For the SARIF upload, yes. But for running the OSPS plugin against public repositories, the builtin CI token does not have access to make API calls.
+**A:** Unfortunately, no. For running the OSPS plugin against public repositories, the builtin CI token does not have access to make API calls.
 
 ### Q: Why isn't my SARIF file uploading to the Security tab?
 
