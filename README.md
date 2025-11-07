@@ -127,7 +127,7 @@ All assessment results are written to the `evaluation_results/` directory in you
 
 ### Q: Can I use `GITHUB_TOKEN` instead of a Personal Access Token?
 
-**A:** Yes, for public repositories, `${{ secrets.GITHUB_TOKEN }}` works and is automatically provided by GitHub Actions. However, it has limited permissions and may not have access to all repository data needed for comprehensive assessments. For private repositories or more thorough assessments, use a Personal Access Token with appropriate scopes.
+**A:** For the SARIF upload, yes. But for running the OSPS plugin against public repositories, the builtin CI token does not have access to make API calls.
 
 ### Q: Why isn't my SARIF file uploading to the Security tab?
 
