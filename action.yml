@@ -87,18 +87,6 @@ runs:
           -v ${{ github.workspace }}/evaluation_results:/.privateer/bin/evaluation_results \
           eddieknight/pvtr-github-repo:latest
 
-    - name: Fix permissions for evaluation_results
-      shell: bash
-      if: always()
-      run: |
-        # Fix ownership and permissions after Docker run
-        # Docker may create files with different ownership (appuser uid 1001)
-        # This ensures the GitHub Actions runner can read/write the files
-        if [ -d "evaluation_results" ]; then
-          sudo chown -R runner:runner evaluation_results 2>/dev/null || sudo chown -R $(id -u):$(id -g) evaluation_results 2>/dev/null || true
-          sudo chmod -R 775 evaluation_results 2>/dev/null || chmod -R 775 evaluation_results 2>/dev/null || true
-        fi
-
     - name: Prepare SARIF file for upload
       shell: bash
       id: sarif
