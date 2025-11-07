@@ -116,18 +116,6 @@ Your GitHub Personal Access Token needs **repository read permissions**. For pub
 4. **Review artifact uploads**: Download and inspect the `evaluation_results` artifact for detailed logs
 5. **Validate configuration**: Ensure all required inputs are provided correctly
 
-### Q: Can I run this action on a schedule?
-
-**A:** Yes! Use GitHub Actions' `schedule` trigger:
-
-```yaml
-on:
-  schedule:
-    - cron: "0 9 * * 1"  # Every Monday at 9 AM UTC
-```
-
-This allows you to run regular security assessments automatically.
-
 ## Contributing
 
 Contributions are welcome! Please see our contributing guidelines for more information.
