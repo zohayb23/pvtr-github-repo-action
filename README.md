@@ -153,15 +153,22 @@ The action will log warnings if the SARIF file cannot be uploaded, and the uploa
 **A:** Yes, you can create a matrix strategy to assess multiple repositories:
 
 ```yaml
-strategy:
-  matrix:
-    repo: [repo1, repo2, repo3]
-steps:
-  - uses: revanite-io/pvtr-github-repo-action@main
-    with:
-      owner: ${{ github.repository_owner }}
-      repo: ${{ matrix.repo }}
-      token: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  assess-repos:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: [repo1, repo2, repo3]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run OSPS Security Assessment
+        uses: revanite-io/pvtr-github-repo-action@main
+        with:
+          owner: ${{ github.repository_owner }}
+          repo: ${{ matrix.repo }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Q: What if I get permission errors when accessing files?
