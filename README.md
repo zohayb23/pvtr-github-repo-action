@@ -10,8 +10,11 @@ GitHub Action for running OSPS (Open Source Project Security) Baseline assessmen
 - 🎯 Configurable catalog selection (default: `osps-baseline`)
 - 📦 Artifact uploads for assessment results
 
-## Usage
+## Results
+
 <img width="720" height="512" alt="image" src="https://github.com/user-attachments/assets/1c5c0f6e-9f06-40cc-8fc9-a72b3f01d3a7" />
+
+## Usage
 
 ### Basic Example
 
