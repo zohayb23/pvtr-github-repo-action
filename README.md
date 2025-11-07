@@ -43,7 +43,7 @@ jobs:
         with:
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PVTR_GITHUB_TOKEN }}
           catalog: "osps-baseline"
           upload-sarif: "true"
       
